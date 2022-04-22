@@ -1,54 +1,88 @@
 #!/usr/bin/env node 
-import fs from 'fs'
-import path from "path"
-import minimist from 'minimist'
-import  getStdnIn from 'get-stdin'
 
+
+import fs from 'fs'
+import minimist from 'minimist'
+import { Transform } from 'stream'
+import path,{dirname} from 'path'
+
+const basePath = path.resolve(process.env.BASE_PATH||"")
+console.log(basePath)
 
 const args = minimist(process.argv.slice(2),{
     string:["file"],
-    boolean:["help"]
+    boolean:["help","in"]
 })
 
-
 if(args.help){
-    printHelp()
+    printHelp
 }
 else if(args.file){
-    const filePath =  path.resolve(args.file)
-    fs.readFile(filePath,(error,content)=>{
-        if(error) handleError(error);
-        processContent(content.toString())
-    })}
-else if(args.in || args["_"].includes("-") ){
-    
-    getStdnIn().then(processContent).catch(handleError)
+    const filePath = path.join(basePath,args.file)
+    const fileStream = fs.createReadStream(filePath)
+    processStream(fileStream)
+}
+else if(args.in || args["_"].includes('-')){
+    processStream(process.stdin)
 }
 else{
-    printHelp()
+    error("incorrect script usage", true)
 }
 
 
-function processContent(content){
+
+
+function processStream(inStream){
+    let inputStream = inStream
+    let outputStream 
     
-    process.stdout.write(content.toUpperCase()+ "\n")
+    //transform stream to transform stream
+    
+    let transformStream = new Transform({
+        transform(chunck,enc,next){
+            this.push(chunck.toString().toUpperCase())
+            next()
+        }
+    })
+    
+    inputStream = inputStream.pipe(transformStream)
+    
+    outputStream = process.stdout
+    
+    inputStream.pipe(outputStream)
+    
+
+    
 }
 
 
-function handleError(error){
-process.stderr.write("an error occured",error.message)
-    
-    
-}
 
+
+
+
+function error(error, showHelp= false ){
+    
+
+    console.error(error)
+    if(showHelp){
+        console.log('')
+        printHelp()
+    }
+}
 
 
 
 
 function printHelp(){
-    console.log("./scriptjs")
-    console.log("             ")
-    console.log("            ./script.js --FILE=[FILE_NAME]")
-    console.log("./script.js --help")
+    console.log("")
+    console.log("scipt usage")
+    console.log("--help     prints this help")
+    console.log("--file={fileName}   reads file from {filename}")
+    console.log("--in or -           reads file from stdIn")
+    
+    
     
 }
+
+
+

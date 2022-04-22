@@ -7,7 +7,7 @@ import { Transform } from 'stream'
 import path,{dirname} from 'path'
 
 const basePath = path.resolve(process.env.BASE_PATH||"")
-console.log(basePath)
+const outPath = path.join(path.resolve(process.env.BASE_PATH || ""),"out.txt")
 
 const args = minimist(process.argv.slice(2),{
     string:["file"],
@@ -45,14 +45,16 @@ function processStream(inStream){
         }
     })
     
+
     inputStream = inputStream.pipe(transformStream)
     
-    outputStream = process.stdout
+     outputStream = process.stdout
+    
+        if(args.out){
+        outputStream = fs.createWriteStream(outPath)
+    }
     
     inputStream.pipe(outputStream)
-    
-
-    
 }
 
 
@@ -79,6 +81,8 @@ function printHelp(){
     console.log("--help     prints this help")
     console.log("--file={fileName}   reads file from {filename}")
     console.log("--in or -           reads file from stdIn")
+    console.log("--out                writes to the file called out.txt in the specified path or current directory")
+    console.log('')
     
     
     

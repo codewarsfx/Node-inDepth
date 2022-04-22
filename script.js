@@ -4,7 +4,9 @@
 import fs from 'fs'
 import minimist from 'minimist'
 import { Transform } from 'stream'
-import path,{dirname} from 'path'
+import path from 'path'
+import {createGzip,createGunzip} from 'zlib'
+
 
 const basePath = path.resolve(process.env.BASE_PATH||"")
 const outPath = path.join(path.resolve(process.env.BASE_PATH || ""),"out.txt")
@@ -37,6 +39,10 @@ function processStream(inStream){
     let outputStream 
     
     //transform stream to transform stream
+    if(args.uncompress){
+        const gunZip = createGunzip()
+        inputStream = inputStream.pipe(gunZip)
+    }
     
     let transformStream = new Transform({
         transform(chunck,enc,next){
@@ -47,6 +53,10 @@ function processStream(inStream){
     
 
     inputStream = inputStream.pipe(transformStream)
+    if(args.compress){
+        const gzipFunc = createGzip()
+        inputStream = inputStream.pipe(gzipFunc)
+    }
     
      outputStream = process.stdout
     
@@ -82,7 +92,7 @@ function printHelp(){
     console.log("--file={fileName}   reads file from {filename}")
     console.log("--in or -           reads file from stdIn")
     console.log("--out                writes to the file called out.txt in the specified path or current directory")
-    console.log('')
+    console.log('--compress           compress the files content')
     
     
     

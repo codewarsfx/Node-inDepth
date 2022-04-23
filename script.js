@@ -13,7 +13,7 @@ const outPath = path.join(path.resolve(process.env.BASE_PATH || ""),"out.txt")
 
 const args = minimist(process.argv.slice(2),{
     string:["file"],
-    boolean:["help","in"]
+    boolean:["help","in","out", "compress","uncompress"]
 })
 
 if(args.help){
@@ -44,15 +44,16 @@ function processStream(inStream){
         inputStream = inputStream.pipe(gunZip)
     }
     
-    let transformStream = new Transform({
+    if(args.upper){
+            let transformStream = new Transform({
         transform(chunck,enc,next){
             this.push(chunck.toString().toUpperCase())
             next()
         }
     })
-    
+      inputStream = inputStream.pipe(transformStream)
+    }
 
-    inputStream = inputStream.pipe(transformStream)
     if(args.compress){
         const gzipFunc = createGzip()
         inputStream = inputStream.pipe(gzipFunc)
@@ -93,6 +94,8 @@ function printHelp(){
     console.log("--in or -           reads file from stdIn")
     console.log("--out                writes to the file called out.txt in the specified path or current directory")
     console.log('--compress           compress the files content')
+    console.log('--uncompress           compress the files content')
+    console.log('--upper          capiltalises  the file content')
     
     
     
